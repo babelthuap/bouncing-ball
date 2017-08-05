@@ -17,9 +17,11 @@ function init() {
   // Create objects
   const SceneObject = {
     ball: getSphere(2, 0xff0000 /* red */),
-    plane: getPlane(12, 12, 0xdddddd /* gray */),
-    spotlight1: getSpotlight(0xffffff, 1.5, 5, 10, 4),
-    spotlight2: getSpotlight(0xffffff, 1.5, -5, 10, 4),
+    floor: getPlane(12, 12, 0xdddddd /* gray */),
+    wallX: getPlane(12, 12, 0xdddd00 /* yellow */),
+    wallZ: getPlane(12, 12, 0x0000dd /* blue */),
+    spotlight1: getSpotlight(0xffffff, 1.5, 6, 18, 6),
+    spotlight2: getSpotlight(0xffffff, 1.5, -6, 18, 6),
   };
 
   // Add objects to scene
@@ -34,12 +36,19 @@ function init() {
   camera.lookAt(new THREE.Vector3(0, 5, 0));
   
   // Transform meshes
-  SceneObject.plane.rotation.x = Math.PI/2;
   SceneObject.ball.position.y = 4 * SceneObject.ball.geometry.parameters.radius;
+  SceneObject.floor.rotation.x = Math.PI / 2;
+  SceneObject.wallX.rotation.y = Math.PI / 2;
+  SceneObject.wallX.position.x = -6;
+  SceneObject.wallX.position.y = 6;
+  SceneObject.wallZ.position.y = 6;
+  SceneObject.wallZ.position.z = -6;
 
   // Add shadows
   SceneObject.ball.castShadow = true;
-  SceneObject.plane.receiveShadow = true;
+  SceneObject.floor.receiveShadow = true;
+  SceneObject.wallX.receiveShadow = true;
+  SceneObject.wallZ.receiveShadow = true;
 
   // Set up renderer
   const renderer = new THREE.WebGLRenderer();
@@ -50,9 +59,11 @@ function init() {
   // Physics stuff
   const acceleration = -0.007;
   let ballVelocity = 0;
+  let step = 0;
 
   // Init animation
   (function update() {
+    // Move ball
     const ball = SceneObject.ball;
     ball.position.y += ballVelocity;
     ballVelocity += acceleration;
@@ -61,6 +72,12 @@ function init() {
       // Bounce!
       ballVelocity = -bounceMagnitude(ballVelocity) * ballVelocity;
     }
+
+    // Move camera
+    camera.position.x = Math.min(20, 20 * (step / 700));
+    camera.position.z = Math.max(0, 20 * (1 - step / 700));
+    camera.lookAt(new THREE.Vector3(0, 5, 0));
+    step++;
 
     renderer.render(scene, camera);
     requestAnimationFrame(() => {

@@ -16,11 +16,11 @@ function init() {
 
   // Create objects
   const SceneObject = {
-    ball: getSphere(2, 0xff0000 /* red */),
+    ball: getSphere(2, 0xdd0000 /* red */),
     floor: getPlane(12, 12, 0xdddddd /* gray */),
     wallX: getPlane(12, 12, 0xdddd00 /* yellow */),
     wallZ: getPlane(12, 12, 0x0000dd /* blue */),
-    spotlight1: getSpotlight(0xffffff, 1.5, 6, 18, 6),
+    spotlight1: getSpotlight(0xffffff, 1.5, 10, 18, 10),
     spotlight2: getSpotlight(0xffffff, 1.5, -6, 18, 6),
   };
 
@@ -95,7 +95,11 @@ function bounceMagnitude(v) {
 // Creates a sphere with the specified radius and color.
 function getSphere(radius, color) {
   const geometry = new THREE.SphereGeometry(radius, 24, 24);
-  const material = new THREE.MeshStandardMaterial({color});
+  const material = new THREE.MeshStandardMaterial({
+    color: color,
+    metalness: 0.7,
+    roughness: 0.9,
+  });
   const mesh = new THREE.Mesh(geometry, material);
   return mesh;
 }
@@ -105,6 +109,8 @@ function getPlane(width, height, color) {
   const geometry = new THREE.PlaneGeometry(width, height);
   const material = new THREE.MeshStandardMaterial({
     color: color,
+    metalness: 0.65,
+    roughness: 0.75,
     side: THREE.DoubleSide,
   });
   const mesh = new THREE.Mesh(geometry, material);

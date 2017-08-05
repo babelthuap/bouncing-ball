@@ -17,7 +17,7 @@ function init() {
   // Create objects
   const SceneObject = {
     ball: getSphere(2, 0xff0000 /* red */),
-    plane: getPlane(10, 10, 0xdddddd /* gray */),
+    plane: getPlane(12, 12, 0xdddddd /* gray */),
     spotlight1: getSpotlight(0xffffff, 1.5, 5, 10, 4),
     spotlight2: getSpotlight(0xffffff, 1.5, -5, 10, 4),
   };
@@ -37,9 +37,14 @@ function init() {
   SceneObject.plane.rotation.x = Math.PI/2;
   SceneObject.ball.position.y = 4 * SceneObject.ball.geometry.parameters.radius;
 
+  // Add shadows
+  SceneObject.ball.castShadow = true;
+  SceneObject.plane.receiveShadow = true;
+
   // Set up renderer
   const renderer = new THREE.WebGLRenderer();
   renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.shadowMap.enabled = true;
   document.getElementById('webgl').appendChild(renderer.domElement);
 
   // Physics stuff
@@ -95,6 +100,9 @@ function getSpotlight(color, intensity, x, y, z) {
   light.position.x = x;
   light.position.y = y;
   light.position.z = z;
+  light.castShadow = true;
+  light.shadow.mapSize.x = 4096;
+  light.shadow.mapSize.y = 4096;
   return light;
 }
 })();

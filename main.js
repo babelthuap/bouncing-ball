@@ -17,11 +17,11 @@ function init() {
   // Create objects
   const SceneObject = {
     ball: getSphere(2, 0xdd0000 /* red */),
-    floor: getPlane(12, 12, 0xdddddd /* gray */),
-    wallX: getPlane(12, 12, 0xdddd00 /* yellow */),
-    wallZ: getPlane(12, 12, 0x0000dd /* blue */),
-    spotlight1: getSpotlight(0xffffff, 1.5, 10, 18, 10),
-    spotlight2: getSpotlight(0xffffff, 1.5, -6, 18, 6),
+    floor: getPlane(12, 12, 0xbbbbbb),
+    wallX: getPlane(12, 12, 0xdddddd),
+    wallZ: getPlane(12, 12, 0xdddddd),
+    spotlight1: getSpotlight(0x91c8ff, 1.5, 10, 18, 10),
+    spotlight2: getSpotlight(0xffdcb4, 1.5, -6, 18, 6),
   };
 
   // Add objects to scene
@@ -96,7 +96,9 @@ function bounceMagnitude(v) {
 function getSphere(radius, color) {
   const geometry = new THREE.SphereGeometry(radius, 24, 24);
   const material = new THREE.MeshStandardMaterial({
+    bumpScale: 0.02,
     color: color,
+    bumpMap: window.texture,
     metalness: 0.7,
     roughness: 0.9,
   });
@@ -108,11 +110,20 @@ function getSphere(radius, color) {
 function getPlane(width, height, color) {
   const geometry = new THREE.PlaneGeometry(width, height);
   const material = new THREE.MeshStandardMaterial({
+    bumpScale: 0.09,
     color: color,
+    bumpMap: window.metalTexture,
+    map: window.metalTexture,
+    roughnessMap: window.metalTexture,
     metalness: 0.65,
     roughness: 0.75,
     side: THREE.DoubleSide,
   });
+  for (const mapType of ['bumpMap', 'map', 'roughnessMap']) {
+    material[mapType].wrapS = THREE.RepeatWrapping;
+    material[mapType].wrapT = THREE.RepeatWrapping;
+    material[mapType].repeat.set(3, 2);
+  };
   const mesh = new THREE.Mesh(geometry, material);
   return mesh;
 }

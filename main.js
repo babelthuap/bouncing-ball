@@ -14,13 +14,18 @@ function init() {
     1000, // far clipping plane (beyond which nothing is visible)
   );
 
-  // Create meshes
-  const ball = getSphere(2, 0xff0000 /* red */);
-  const plane = getPlane(12, 10, 0xdddddd /* gray */);
+  // Create objects
+  const SceneObject = {
+    ball: getSphere(2, 0xff0000 /* red */),
+    plane: getPlane(10, 10, 0xdddddd /* gray */),
+    spotlight1: getSpotlight(0xffffff, 1.5, 5, 10, 4),
+    spotlight2: getSpotlight(0xffffff, 1.5, -5, 10, 4),
+  };
 
-  // Add meshes to scene
-  scene.add(ball);
-  scene.add(plane);
+  // Add objects to scene
+  for (const obj of Object.values(SceneObject)) {
+    scene.add(obj);
+  }
 
   // Move camera
   camera.position.x = 0;
@@ -29,8 +34,8 @@ function init() {
   camera.lookAt(new THREE.Vector3(0, 5, 0));
   
   // Transform meshes
-  plane.rotation.x = Math.PI/2;
-  ball.position.y = 4 * ball.geometry.parameters.radius;
+  SceneObject.plane.rotation.x = Math.PI/2;
+  SceneObject.ball.position.y = 4 * SceneObject.ball.geometry.parameters.radius;
 
   // Set up renderer
   const renderer = new THREE.WebGLRenderer();
@@ -43,6 +48,7 @@ function init() {
 
   // Init animation
   (function update() {
+    const ball = SceneObject.ball;
     ball.position.y += ballVelocity;
     ballVelocity += acceleration;
     if (ballVelocity < 0 &&
@@ -67,7 +73,7 @@ function bounceMagnitude(v) {
 // Creates a sphere with the specified radius and color.
 function getSphere(radius, color) {
   const geometry = new THREE.SphereGeometry(radius, 24, 24);
-  const material = new THREE.MeshBasicMaterial({color});
+  const material = new THREE.MeshStandardMaterial({color});
   const mesh = new THREE.Mesh(geometry, material);
   return mesh;
 }
@@ -75,11 +81,20 @@ function getSphere(radius, color) {
 // Creates a plane with the specifed dimensions and color.
 function getPlane(width, height, color) {
   const geometry = new THREE.PlaneGeometry(width, height);
-  const material = new THREE.MeshBasicMaterial({
+  const material = new THREE.MeshStandardMaterial({
     color: color,
     side: THREE.DoubleSide,
   });
   const mesh = new THREE.Mesh(geometry, material);
   return mesh;
+}
+
+// Creates a spotlight, dude.
+function getSpotlight(color, intensity, x, y, z) {
+  const light = new THREE.SpotLight(color, intensity);
+  light.position.x = x;
+  light.position.y = y;
+  light.position.z = z;
+  return light;
 }
 })();

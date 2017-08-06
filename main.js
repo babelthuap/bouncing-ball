@@ -1,8 +1,8 @@
 (() => {
 'use strict';
 
-const accelerationPerMs = -0.00042; // Gravity
-const cameraMoveDurationMs = 13000;
+const acceleration = -0.000015; // Gravity
+const cameraMoveDurationMs = 12000;
 init();
 
 // Initializes scene, camera, and renderer.
@@ -65,10 +65,10 @@ function init() {
 // Initializes animation and basic physics simulation.
 function initAnimation(renderer, scene, camera) {
   const ball = scene.getObjectByName('ball');
+  let ballMoving = true;
   let ballVelocity = 0;
   let prevT = Date.now();
   let elapsedT = 0;
-  let done = false;
 
   (function update() {
     // Update time counters
@@ -78,14 +78,24 @@ function initAnimation(renderer, scene, camera) {
     prevT = currentT;
 
     // Move ball
-    ball.position.y += ballVelocity;
-    ballVelocity += accelerationPerMs * deltaT;
-    if (ballVelocity < 0 &&
-        ball.position.y <= ball.geometry.parameters.radius) {
-      // Bounce!
-      ballVelocity = -bounceMagnitude(ballVelocity) * ballVelocity;
-      if (ballVelocity < 0.01 && elapsedT >= cameraMoveDurationMs) {
-        done = true;
+    if (ballMoving) {
+      ball.position.y +=
+          ballVelocity * deltaT + 0.5 * acceleration * (deltaT ** 2);
+      ballVelocity += acceleration * deltaT;
+      if (ball.position.y <= ball.geometry.parameters.radius) {
+        // Deform ball so it never clips through the floor
+        ball.scale.y = ball.position.y / ball.geometry.parameters.radius;
+        ball.scale.x = ball.scale.z = 1 / ball.scale.y;
+        console.log('ballVelocity:', ballVelocity);
+        if (ballVelocity < 0) {
+          // Bounce!
+          ballVelocity = -bounceMagnitude(ballVelocity) * ballVelocity;
+        }
+        if (Math.abs(ballVelocity) < 0.001) {
+          ballMoving = false;
+        }
+      } else {
+        ball.scale.y = ball.scale.x = ball.scale.z = 1;
       }
     }
 
@@ -94,17 +104,18 @@ function initAnimation(renderer, scene, camera) {
     camera.position.z = Math.max(0, 20 * (1 - elapsedT / cameraMoveDurationMs));
     camera.lookAt(new THREE.Vector3(0, 5, 0));
 
+    // Render, then schedule the next frame
     renderer.render(scene, camera);
-    if (!done) {
+    if (ballMoving || elapsedT < cameraMoveDurationMs) {
       requestAnimationFrame(update);
     }
   })();
 }
 
-// Simple sigmoid function chosen so that v = -0.5 returns 0.95.
+// Simple sigmoid function chosen so that v = -0.01 returns 0.9.
 // Totally hacked together.
 function bounceMagnitude(v) {
-  return Math.abs(38 * v) / (1 + Math.abs(38 * v));
+  return Math.abs(900 * v) / (1 + Math.abs(900 * v));
 }
 
 // Creates a sphere with the specified radius and color.

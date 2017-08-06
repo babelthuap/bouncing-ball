@@ -83,10 +83,6 @@ function initAnimation(renderer, scene, camera) {
           ballVelocity * deltaT + 0.5 * acceleration * (deltaT ** 2);
       ballVelocity += acceleration * deltaT;
       if (ball.position.y <= ball.geometry.parameters.radius) {
-        // Deform ball so it never clips through the floor
-        ball.scale.y = ball.position.y / ball.geometry.parameters.radius;
-        ball.scale.x = ball.scale.z = 1 / ball.scale.y;
-        console.log('ballVelocity:', ballVelocity);
         if (ballVelocity < 0) {
           // Bounce!
           ballVelocity = -bounceMagnitude(ballVelocity) * ballVelocity;
@@ -94,8 +90,6 @@ function initAnimation(renderer, scene, camera) {
         if (Math.abs(ballVelocity) < 0.001) {
           ballMoving = false;
         }
-      } else {
-        ball.scale.y = ball.scale.x = ball.scale.z = 1;
       }
     }
 

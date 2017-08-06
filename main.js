@@ -1,6 +1,8 @@
 (() => {
 'use strict';
 
+const accelerationPerMs = -0.00042; // Gravity
+const cameraMoveDurationMs = 13000;
 init();
 
 // Initializes scene, camera, and renderer.
@@ -63,28 +65,39 @@ function init() {
 // Initializes animation and basic physics simulation.
 function initAnimation(renderer, scene, camera) {
   const ball = scene.getObjectByName('ball');
-  const acceleration = -0.007;
   let ballVelocity = 0;
-  let step = 0;
+  let prevT = Date.now();
+  let elapsedT = 0;
+  let done = false;
 
   (function update() {
+    // Update time counters
+    const currentT = Date.now();
+    const deltaT = currentT - prevT;
+    elapsedT += deltaT;
+    prevT = currentT;
+
     // Move ball
     ball.position.y += ballVelocity;
-    ballVelocity += acceleration;
+    ballVelocity += accelerationPerMs * deltaT;
     if (ballVelocity < 0 &&
         ball.position.y <= ball.geometry.parameters.radius) {
       // Bounce!
       ballVelocity = -bounceMagnitude(ballVelocity) * ballVelocity;
+      if (ballVelocity < 0.01 && elapsedT >= cameraMoveDurationMs) {
+        done = true;
+      }
     }
 
     // Move camera
-    camera.position.x = Math.min(20, 20 * (step / 700));
-    camera.position.z = Math.max(0, 20 * (1 - step / 700));
+    camera.position.x = Math.min(20, 20 * (elapsedT / cameraMoveDurationMs));
+    camera.position.z = Math.max(0, 20 * (1 - elapsedT / cameraMoveDurationMs));
     camera.lookAt(new THREE.Vector3(0, 5, 0));
-    step++;
 
     renderer.render(scene, camera);
-    requestAnimationFrame(update);
+    if (!done) {
+      requestAnimationFrame(update);
+    }
   })();
 }
 

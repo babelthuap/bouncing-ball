@@ -3,7 +3,7 @@
 
 init();
 
-// Initializes scene, camera, and animation rendering.
+// Initializes scene, camera, and renderer.
 function init() {
   // Set up scene and camera
   const scene = new THREE.Scene();
@@ -37,6 +37,7 @@ function init() {
   
   // Transform meshes
   SceneObject.ball.position.y = 4 * SceneObject.ball.geometry.parameters.radius;
+  SceneObject.ball.name = 'ball';
   SceneObject.floor.rotation.x = Math.PI / 2;
   SceneObject.wallX.rotation.y = Math.PI / 2;
   SceneObject.wallX.position.x = -6;
@@ -56,15 +57,18 @@ function init() {
   renderer.shadowMap.enabled = true;
   document.getElementById('webgl').appendChild(renderer.domElement);
 
-  // Physics stuff
+  initAnimation(renderer, scene, camera);
+}
+
+// Initializes animation and basic physics simulation.
+function initAnimation(renderer, scene, camera) {
+  const ball = scene.getObjectByName('ball');
   const acceleration = -0.007;
   let ballVelocity = 0;
   let step = 0;
 
-  // Init animation
   (function update() {
     // Move ball
-    const ball = SceneObject.ball;
     ball.position.y += ballVelocity;
     ballVelocity += acceleration;
     if (ballVelocity < 0 &&
@@ -80,9 +84,7 @@ function init() {
     step++;
 
     renderer.render(scene, camera);
-    requestAnimationFrame(() => {
-      update(renderer, scene, camera);
-    });
+    requestAnimationFrame(update);
   })();
 }
 

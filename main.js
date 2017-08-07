@@ -26,18 +26,13 @@ function init() {
     spotlight2: getSpotlight(0xffdcb4, 1.5, -6, 18, 6),
   };
 
-  // Add objects to scene
-  for (const obj of Object.values(SceneObject)) {
-    scene.add(obj);
-  }
-
   // Move camera
   camera.position.x = 1;
   camera.position.y = 5;
   camera.position.z = 20;
   
   // Transform meshes
-  SceneObject.ball.position.y = 4 * SceneObject.ball.geometry.parameters.radius;
+  SceneObject.ball.position.y = 9;
   SceneObject.ball.name = 'ball';
   SceneObject.floor.rotation.x = Math.PI / 2;
   SceneObject.wallX.rotation.y = Math.PI / 2;
@@ -46,8 +41,9 @@ function init() {
   SceneObject.wallZ.position.y = 6;
   SceneObject.wallZ.position.z = -6;
 
-  // Shift everything down
+  // Add objects to scene and shift everything down
   for (const obj of Object.values(SceneObject)) {
+    scene.add(obj);
     obj.position.y += floorLevel;
   }
 
@@ -63,7 +59,9 @@ function init() {
   renderer.shadowMap.enabled = true;
   document.getElementById('webgl').appendChild(renderer.domElement);
 
+  // three.js extensions
   const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  new THREEx.WindowResize(renderer, camera);
 
   initAnimation(renderer, scene, camera, controls);
 }
@@ -71,26 +69,27 @@ function init() {
 // Initializes animation and basic physics simulation.
 function initAnimation(renderer, scene, camera, controls) {
   const ball = scene.getObjectByName('ball');
-  ball.velocity = 0;
-  let ballMoving = true;
-  let prevT = Date.now();
-  let elapsedT = 0;
+  const initialBallY = ball.position.y;
+  let ballMoving, prevT;
+  restart();
+  document.getElementById('restart').addEventListener('click', restart);
+
+  function restart() {
+    ball.position.y = initialBallY;
+    ball.velocity = 0;
+    ballMoving = true;
+    prevT = Date.now();
+  }
 
   (function update() {
     renderer.render(scene, camera);
     controls.update();
-
-    // Update time counters
-    const currentT = Date.now();
-    const deltaT = currentT - prevT;
-    elapsedT += deltaT;
-    prevT = currentT;
-
     // Move ball
     if (ballMoving) {
-      ballMoving = moveBall(ball, deltaT);
+      const currentT = Date.now();
+      ballMoving = moveBall(ball, currentT - prevT);
+      prevT = currentT;
     }
-
     // Schedule the next frame
     requestAnimationFrame(update);
   })();

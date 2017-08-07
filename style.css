@@ -1,7 +1,19 @@
 html,
 body {
-  background-color: #000;
   margin: 0;
   padding: 0;
   overflow: hidden;
+}
+
+#restart {
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 14px;
+  position: fixed;
+  left: 4px;
+  top: 4px;
+}
+
+#restart:focus {
+  outline: none;
 }

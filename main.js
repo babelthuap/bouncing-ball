@@ -2,7 +2,7 @@
 'use strict';
 
 const acceleration = -0.000045; // Gravity
-const cameraMoveDurationMs = 12000;
+const floorLevel = -4;
 init();
 
 // Initializes scene, camera, and renderer.
@@ -32,10 +32,9 @@ function init() {
   }
 
   // Move camera
-  camera.position.x = 0;
+  camera.position.x = 1;
   camera.position.y = 5;
   camera.position.z = 20;
-  camera.lookAt(new THREE.Vector3(0, 5, 0));
   
   // Transform meshes
   SceneObject.ball.position.y = 4 * SceneObject.ball.geometry.parameters.radius;
@@ -46,6 +45,11 @@ function init() {
   SceneObject.wallX.position.y = 6;
   SceneObject.wallZ.position.y = 6;
   SceneObject.wallZ.position.z = -6;
+
+  // Shift everything down
+  for (const obj of Object.values(SceneObject)) {
+    obj.position.y += floorLevel;
+  }
 
   // Add shadows
   SceneObject.ball.castShadow = true;
@@ -59,11 +63,13 @@ function init() {
   renderer.shadowMap.enabled = true;
   document.getElementById('webgl').appendChild(renderer.domElement);
 
-  initAnimation(renderer, scene, camera);
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+  initAnimation(renderer, scene, camera, controls);
 }
 
 // Initializes animation and basic physics simulation.
-function initAnimation(renderer, scene, camera) {
+function initAnimation(renderer, scene, camera, controls) {
   const ball = scene.getObjectByName('ball');
   ball.velocity = 0;
   let ballMoving = true;
@@ -71,6 +77,9 @@ function initAnimation(renderer, scene, camera) {
   let elapsedT = 0;
 
   (function update() {
+    renderer.render(scene, camera);
+    controls.update();
+
     // Update time counters
     const currentT = Date.now();
     const deltaT = currentT - prevT;
@@ -82,42 +91,34 @@ function initAnimation(renderer, scene, camera) {
       ballMoving = moveBall(ball, deltaT);
     }
 
-    // Move camera
-    camera.position.x = Math.min(20, 20 * (elapsedT / cameraMoveDurationMs));
-    camera.position.z = Math.max(0, 20 * (1 - elapsedT / cameraMoveDurationMs));
-    camera.lookAt(new THREE.Vector3(0, 5, 0));
-
-    // Render, then schedule the next frame
-    renderer.render(scene, camera);
-    if (ballMoving || elapsedT < cameraMoveDurationMs) {
-      requestAnimationFrame(update);
-    }
+    // Schedule the next frame
+    requestAnimationFrame(update);
   })();
 }
 
 // Updates the position and velocity of the ball. Returns true iff the ball is
 // still moving.
 function moveBall(ball, dt) {
-  const radius = ball.geometry.parameters.radius;
+  const minHeight = floorLevel + ball.geometry.parameters.radius;
   const deltaP = positionChange(ball.velocity, dt);
   ball.position.y += deltaP;
-  if (ball.position.y > radius) {
+  if (ball.position.y > minHeight) {
     ball.velocity += acceleration * dt;
   } else {
     // Handle bounce
     const originalPosition = ball.position.y - deltaP;
     const timeToImpact = timeToFallToPosition(
-        originalPosition, ball.velocity, radius);
+        originalPosition, ball.velocity, minHeight);
     if (timeToImpact > 0) { // Also tests that !isNaN(timeToImpact)
       const velocityAtImpact = ball.velocity + acceleration * timeToImpact;
       const bounceVelocity =
           -bounceMagnitude(velocityAtImpact) * velocityAtImpact;
       const timeAfterBounce = dt - timeToImpact;
       ball.position.y =
-          radius + positionChange(bounceVelocity, timeAfterBounce);
+          minHeight + positionChange(bounceVelocity, timeAfterBounce);
       ball.velocity = bounceVelocity + acceleration * timeAfterBounce;
     } else {
-      ball.position.y = radius;
+      ball.position.y = minHeight;
       return false;
     }
   }

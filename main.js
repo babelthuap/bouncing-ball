@@ -1,7 +1,7 @@
 (() => {
 'use strict';
 
-const acceleration = -0.000015; // Gravity
+const acceleration = -0.000045; // Gravity
 const cameraMoveDurationMs = 12000;
 init();
 
@@ -65,8 +65,8 @@ function init() {
 // Initializes animation and basic physics simulation.
 function initAnimation(renderer, scene, camera) {
   const ball = scene.getObjectByName('ball');
+  ball.velocity = 0;
   let ballMoving = true;
-  let ballVelocity = 0;
   let prevT = Date.now();
   let elapsedT = 0;
 
@@ -79,18 +79,7 @@ function initAnimation(renderer, scene, camera) {
 
     // Move ball
     if (ballMoving) {
-      ball.position.y +=
-          ballVelocity * deltaT + 0.5 * acceleration * (deltaT ** 2);
-      ballVelocity += acceleration * deltaT;
-      if (ball.position.y <= ball.geometry.parameters.radius) {
-        if (ballVelocity < 0) {
-          // Bounce!
-          ballVelocity = -bounceMagnitude(ballVelocity) * ballVelocity;
-        }
-        if (Math.abs(ballVelocity) < 0.001) {
-          ballMoving = false;
-        }
-      }
+      ballMoving = moveBall(ball, deltaT);
     }
 
     // Move camera
@@ -104,6 +93,46 @@ function initAnimation(renderer, scene, camera) {
       requestAnimationFrame(update);
     }
   })();
+}
+
+// Updates the position and velocity of the ball. Returns true iff the ball is
+// still moving.
+function moveBall(ball, dt) {
+  const radius = ball.geometry.parameters.radius;
+  const deltaP = positionChange(ball.velocity, dt);
+  ball.position.y += deltaP;
+  if (ball.position.y > radius) {
+    ball.velocity += acceleration * dt;
+  } else {
+    // Handle bounce
+    const originalPosition = ball.position.y - deltaP;
+    const timeToImpact = timeToFallToPosition(
+        originalPosition, ball.velocity, radius);
+    if (timeToImpact > 0) { // Also tests that !isNaN(timeToImpact)
+      const velocityAtImpact = ball.velocity + acceleration * timeToImpact;
+      const bounceVelocity =
+          -bounceMagnitude(velocityAtImpact) * velocityAtImpact;
+      const timeAfterBounce = dt - timeToImpact;
+      ball.position.y =
+          radius + positionChange(bounceVelocity, timeAfterBounce);
+      ball.velocity = bounceVelocity + acceleration * timeAfterBounce;
+    } else {
+      ball.position.y = radius;
+      return false;
+    }
+  }
+  return true;
+}
+
+// Kinematics FTW
+function positionChange(v0, dt) {
+  return v0 * dt + 0.5 * acceleration * dt * dt;
+}
+
+// Quadratic formula! Assumptions: p0 >= targetP and v0 <= 0
+function timeToFallToPosition(p0, v0, targetP) {
+  const discriminant = v0 * v0 - 2 * acceleration * (p0 - targetP);
+  return (-v0 - Math.sqrt(discriminant)) / acceleration;
 }
 
 // Simple sigmoid function chosen so that v = -0.01 returns 0.9.
